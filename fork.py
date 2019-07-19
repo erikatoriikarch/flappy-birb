@@ -4,7 +4,7 @@ class Fork(pygame.sprite.Sprite):
     def __init__(self, pos, isTop = False):
         super().__init__()
         self.image = pygame.image.load('fork.png')
-        self.image = pygame.transform.smoothscale(self.image, (400, 800))
+        self.image = pygame.transform.scale(self.image, (120, 600))
         if isTop:
             self.image = pygame.transform.rotate(self.image, -180)
         self.rect = self.image.get_rect()

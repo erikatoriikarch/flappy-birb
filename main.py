@@ -2,6 +2,8 @@ import random, pygame, sys
 from pygame.locals import *
 from birb import Birb
 from fork import Fork
+from score import Scorebar
+from coin import Coin
 
 pygame.init()
 screen_info = pygame.display.Info()
@@ -14,7 +16,8 @@ color = (0,0,0)
 background = pygame.image.load('background.jpg')
 background = pygame.transform.scale(background, (width, height))
 
-
+coins = pygame.sprite.Group()
+scorebars = pygame.sprite.Group()
 forks = pygame.sprite.Group()
 startPos = (width/8, height/2)
 player = Birb(startPos)
@@ -27,6 +30,7 @@ def lose():
     text = font.render("You got eaten D:", True, (255, 255, 255, ))
     text_rect = text.get_rect()
     text_rect.center = width / 2, height / 2
+
     while True:
         clock.tick(60)
         screen.fill(color)
@@ -35,19 +39,40 @@ def lose():
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    platforms.empty()
+                    forks.empty()
+                    Player.reset(startPos)
+                    return
+def losefall():
+    font = pygame.font.SysFont(None, 70)
+    text = font.render("You were squashed by gravity D:", True, (255, 255, 255,))
+    text_rect = text.get_rect()
+    text_rect.center = width / 2, height / 2
+
+    while True:
+        clock.tick(60)
+        screen.fill(color)
+        screen.blit(text, text_rect)
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    forks.empty()
                     Player.reset(startPos)
                     return
 
 def main():
-    global Ticks, loopCount
+    global Ticks, loopCount, score
     num = 70
     while True:
         clock.tick(60)
-        if loopCount % num == 0:
+        if loopCount % 70 == 35:
+                coins.add(Coin((int(screen_info.current_w), random.randint(0, int(screen_info.current_h)))))
+        if loopCount % 70 == 0:
             toppos = random.randint(0, height/2) - 400
-            forks.add(Fork((width+100, toppos + gapsize + 800)))
-            forks.add(Fork((width + 100, toppos), True))
+            forks.add(Fork((width -100, toppos + gapsize + 650)))
+            forks.add(Fork((width -100, toppos), True))
+            scorebars.add(Scorebar((width-100, 0)))
+
         for event in pygame.event.get():
             if event.type == QUIT:
                 sys.exit()
@@ -58,18 +83,45 @@ def main():
         screen.fill(color)
         player.update()
         forks.update()
-        gets_hit = pygame.sprite.spritecollide(player, forks, False) \
-                or player.rect.center[1] > height
+        scorebars.update()
+        coins.update()
+        gets_coins = pygame.sprite.spritecollide(player, coins, False)
+        gets_score = pygame.sprite.spritecollide(player, scorebars, False)
+        gets_hit = pygame.sprite.spritecollide(player, forks, False)
+        gets_hit2 = player.rect.center[1] > height
         screen.blit(background, [0, 0])
         forks.draw(screen)
+        scorebars.draw(screen)
+        coins.draw(screen)
         screen.blit(player.image, player.rect)
+
+        font = pygame.font.SysFont(None, 70)
+        text = font.render("Score: " + str(score), True, (0, 0, 0,))
+        text_rect = text.get_rect()
+        text_rect.center = width / 2, height / 2
+        screen.blit(text, text_rect)
+
         pygame.display.flip()
         if num > 1:
             num -=0.00001
         loopCount += 1
+
+        if gets_coins:
+            score+=10
+            coins.remove(gets_coins)
+
+        if gets_score:
+            score+=1
+            scorebars.remove(gets_score)
         
         if gets_hit:
             lose()
+            break
+
+        if gets_hit2:
+            losefall()
+            break
+
 
 if __name__ == "__main__":
     main()
